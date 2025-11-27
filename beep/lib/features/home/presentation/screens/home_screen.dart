@@ -12,6 +12,12 @@ class HomeScreen extends StatelessWidget {
         title: const Text('Beep Dashboard'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              context.go('/home/profile');
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
               context.go('/login');
@@ -57,13 +63,13 @@ class HomeScreen extends StatelessWidget {
                   ),
                   _HomeCard(
                     icon: Icons.directions_bus,
-                    title: 'My Routes',
-                    onTap: () {}, // TODO: Implement Routes
+                    title: 'My Trips',
+                    onTap: () => context.go('/home/trips'),
                   ),
                   _HomeCard(
                     icon: Icons.settings,
                     title: 'Settings',
-                    onTap: () {}, // TODO: Implement Settings
+                    onTap: () => context.go('/home/settings'),
                   ),
                 ],
               ),

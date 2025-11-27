@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../config/theme/app_theme.dart';
+import '../../../../core/services/location_service.dart';
+import '../../data/map_service.dart';
 import '../widgets/map_view.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -12,11 +14,51 @@ class MapScreen extends ConsumerStatefulWidget {
 }
 
 class _MapScreenState extends ConsumerState<MapScreen> {
-  // Hardcoded location for Universidad de los Andes (Bogotá)
-  static const LatLng _uniAndesLocation = LatLng(4.6014, -74.0661);
+  // Hardcoded location for Universidad de los Andes (Bogotá) as default
+  static const LatLng _defaultLocation = LatLng(4.6014, -74.0661);
+
+  // State for ETA and Distance
+  int _etaMinutes = 0;
+  double _distanceKm = 0.0;
+  bool _isLoadingRoute = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // In a real app, we would listen to destination selection and calculate route here
+    _calculateRouteDemo();
+  }
+
+  Future<void> _calculateRouteDemo() async {
+    setState(() {
+      _isLoadingRoute = true;
+    });
+
+    try {
+      final mapService = ref.read(mapServiceProvider);
+      // Simulate route from A to B
+      final eta = await mapService.calculateETA(_defaultLocation, const LatLng(4.62, -74.07));
+      final dist = await mapService.calculateDistance(_defaultLocation, const LatLng(4.62, -74.07));
+
+      if (mounted) {
+        setState(() {
+          _etaMinutes = eta;
+          _distanceKm = dist;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingRoute = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final locationAsync = ref.watch(userLocationStreamProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Live Route'),
@@ -26,8 +68,14 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       body: Stack(
         children: [
           // The Map Widget
-          const BeepMapView(
-            initialTarget: _uniAndesLocation,
+          locationAsync.when(
+            data: (position) {
+              return BeepMapView(
+                initialTarget: LatLng(position.latitude, position.longitude),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => const BeepMapView(initialTarget: _defaultLocation),
           ),
 
           // Floating Information Card (ETA, etc.)
@@ -44,37 +92,40 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('ETA', style: Theme.of(context).textTheme.bodySmall),
-                            Text(
-                              '15 min',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: AppTheme.primaryBlue,
-                                fontWeight: FontWeight.bold
-                              )
-                            ),
-                          ],
-                        ),
-                         Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Distance', style: Theme.of(context).textTheme.bodySmall),
-                            Text(
-                              '3.2 km',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: AppTheme.black,
-                                fontWeight: FontWeight.bold
-                              )
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                    if (_isLoadingRoute)
+                      const LinearProgressIndicator(color: AppTheme.primaryBlue)
+                    else
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('ETA', style: Theme.of(context).textTheme.bodySmall),
+                              Text(
+                                '$_etaMinutes min',
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  color: AppTheme.primaryBlue,
+                                  fontWeight: FontWeight.bold
+                                )
+                              ),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Distance', style: Theme.of(context).textTheme.bodySmall),
+                              Text(
+                                '${_distanceKm} km',
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  color: AppTheme.black,
+                                  fontWeight: FontWeight.bold
+                                )
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),
