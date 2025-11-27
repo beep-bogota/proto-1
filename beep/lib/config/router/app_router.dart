@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/map/presentation/screens/map_screen.dart';
+import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/trip/presentation/screens/trip_info_screen.dart';
 
 // GoRouter configuration
 final GoRouter appRouter = GoRouter(
@@ -22,6 +25,21 @@ final GoRouter appRouter = GoRouter(
           path: 'map',
           name: 'map',
           builder: (context, state) => const MapScreen(),
+        ),
+        GoRoute(
+          path: 'profile',
+          name: 'profile',
+          builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: 'settings',
+          name: 'settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: 'trips',
+          name: 'trips',
+          builder: (context, state) => const TripInfoScreen(),
         ),
       ],
     ),
